@@ -139,3 +139,4 @@ logs/*
 cheats.txt
 fabfile.py
 env_files
+.isort.cfg

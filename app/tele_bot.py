@@ -22,6 +22,7 @@ from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import CallbackContext, Filters, MessageHandler, Updater
 
 from apis.apisetu.apisetu import APISETU
+from app.models import TelegramAccount
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -44,10 +45,23 @@ def remove_extra_delimiter(query_str, delimeter=" "):
     return query_str
 
 
-SEARCH_FORMAT = "Please Enter `Age pincode` Eg: 22 110027"
+SEARCH_FORMAT = "Please Enter `Age pincode` \n\tEg: 22 110027"
+Register_format = "Please Enter `register Age pincode` for getting alert on slot availability.\n\tEg: register 22 110027"
 
 
-class SearchFilter:
+class Operation:
+    search = "search"
+    register = "register"
+
+    @classmethod
+    def get_name(cls, st):
+        for a in [cls.search, cls.register]:
+            if st in a:
+                return a
+
+
+class QueryFilter:
+    command: str
     age: int = 0
     pincode: int = 0
     delim = " "
@@ -56,8 +70,14 @@ class SearchFilter:
         self.str = remove_extra_delimiter(query_str, self.delim)
         query_lis = self.str.split(self.delim)
         assert len(query_lis) >= 2, SEARCH_FORMAT
-        self.age = int(query_lis[0])
-        self.pincode = int(query_lis[1])
+        try:
+            self.age = int(query_lis[0])
+            self.pincode = int(query_lis[1])
+            self.operation = Operation.search
+        except:
+            self.operation = Operation.get_name(query_lis[0])
+            self.age = int(query_lis[1])
+            self.pincode = int(query_lis[2])
 
         assert self.age > 0, "Invalid Age"
         assert self.pincode > 0, "Invalid pincode"
@@ -66,6 +86,8 @@ class SearchFilter:
 class Commands:
     available_slot_18 = "available_slot_18"
     available_slot_45 = "available_slot_45"
+    register_for_18 = "Register for 18+"
+    register_for_45 = "Register for 45+"
     help = "help"
     start = "start"
 
@@ -76,37 +98,54 @@ def command_handler(update: Update, context: CallbackContext) -> None:
     tele_id = update.message.chat_id
     bot_name = context.bot.username
     username = update.message.from_user.full_name
+    tele = TelegramAccount.subscribe(tele_id, username)
     user_info = {}
     reply_text = "Invalid command"
-    reply_keyboard = [["18 110027"], ["50 110027"], [Commands.help]]
-    if Commands.start in text or Commands.help in text:
-        reply_text = SEARCH_FORMAT
-
-    try:
-        obj = SearchFilter(text)
-        pincode = obj.pincode
-        age = obj.age
-        if Commands.available_slot_18 in text or age < 44:
-            data = api_obj.slot_by_pincode(pincode)
-            resp = [a for a in data if a.is_18_session_available]
-            if len(resp) > 0:
-                reply_text = lis_to_str_with_indx(
-                    [a.detail_available_18_info_str for a in resp]
-                )
+    reply_keyboard = [
+        ["18 110027", "45 110027"],
+        ["register 18 110027", "register 45 110027"],
+        [Commands.help],
+    ]
+    if text in [Commands.start, Commands.help]:
+        lis = [SEARCH_FORMAT, Register_format]
+        reply_text = lis_to_str_with_indx(lis)
+    else:
+        try:
+            obj = QueryFilter(text)
+            pincode = obj.pincode
+            age = obj.age
+            operation = obj.operation
+            if operation == Operation.register:
+                if Commands.register_for_18 == text or age < 44:
+                    reply_text = tele.register(pincode, 18)
+                elif Commands.register_for_45 == text or age > 44:
+                    reply_text = tele.register(pincode, 45)
             else:
-                reply_text = f"No Slots Available for Age: {age} in pincode: {pincode}"
-        elif Commands.available_slot_45 in text or age > 44:
-            data = api_obj.slot_by_pincode(pincode)
-            resp = [a for a in data if a.is_45_session_available]
-            if len(resp) > 0:
-                reply_text = lis_to_str_with_indx(
-                    [a.detail_available_45_info_str for a in resp]
-                )
-            else:
-                reply_text = f"No Slots Available for Age: {age} in pincode: {pincode}"
+                if Commands.available_slot_18 in text or age < 44:
+                    data = api_obj.slot_by_pincode(pincode)
+                    resp = [a for a in data if a.is_18_session_available]
+                    if len(resp) > 0:
+                        reply_text = lis_to_str_with_indx(
+                            [a.detail_available_18_info_str for a in resp]
+                        )
+                    else:
+                        reply_text = (
+                            f"No Slots Available for Age: {age} in pincode: {pincode}"
+                        )
+                elif Commands.available_slot_45 in text or age > 44:
+                    data = api_obj.slot_by_pincode(pincode)
+                    resp = [a for a in data if a.is_45_session_available]
+                    if len(resp) > 0:
+                        reply_text = lis_to_str_with_indx(
+                            [a.detail_available_45_info_str for a in resp]
+                        )
+                    else:
+                        reply_text = (
+                            f"No Slots Available for Age: {age} in pincode: {pincode}"
+                        )
 
-    except Exception as e:
-        reply_text = str(e)
+        except Exception as e:
+            reply_text = str(e)
     update.message.reply_text(
         reply_text,
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
