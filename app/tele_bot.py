@@ -38,9 +38,36 @@ def lis_to_str(lis):
     return "\n".join([f"{b}" for idx, b in enumerate(lis)])
 
 
+def remove_extra_delimiter(query_str, delimeter=" "):
+    delim = delimeter
+    query_str = delim.join([a for a in query_str.lower().split(delim) if a != ""])
+    return query_str
+
+
+SEARCH_FORMAT = "Please Enter `Age pincode` Eg: 22 110027"
+
+
+class SearchFilter:
+    age: int = 0
+    pincode: int = 0
+    delim = " "
+
+    def __init__(self, query_str):
+        self.str = remove_extra_delimiter(query_str, self.delim)
+        query_lis = self.str.split(self.delim)
+        assert len(query_lis) >= 2, SEARCH_FORMAT
+        self.age = int(query_lis[0])
+        self.pincode = int(query_lis[1])
+
+        assert self.age > 0, "Invalid Age"
+        assert self.pincode > 0, "Invalid pincode"
+
+
 class Commands:
     available_slot_18 = "available_slot_18"
     available_slot_45 = "available_slot_45"
+    help = "help"
+    start = "start"
 
 
 def command_handler(update: Update, context: CallbackContext) -> None:
@@ -51,30 +78,35 @@ def command_handler(update: Update, context: CallbackContext) -> None:
     username = update.message.from_user.full_name
     user_info = {}
     reply_text = "Invalid command"
-    reply_keyboard = [[Commands.available_slot_18, Commands.available_slot_45]]
-    if Commands.available_slot_18 in text:
-        pincode = 110027
-        data = api_obj.slot_by_pincode(pincode)
-        resp = [a for a in data if a.is_18_session_available]
-        if len(resp) > 0:
-            reply_text = lis_to_str_with_indx(
-                [a.detail_available_18_info_str for a in resp]
-            )
-        else:
-            reply_text = "No Slots Available"
+    reply_keyboard = [["18 110027"], ["50 110027"], [Commands.help]]
+    if Commands.start in text or Commands.help in text:
+        reply_text = SEARCH_FORMAT
 
-    elif Commands.available_slot_45 in text:
-        pincode = 110027
-        data = api_obj.slot_by_pincode(pincode)
-        resp = [a for a in data if a.is_45_session_available]
-        if len(resp) > 0:
-            reply_text = lis_to_str_with_indx(
-                [a.detail_available_45_info_str for a in resp]
-            )
+    try:
+        obj = SearchFilter(text)
+        pincode = obj.pincode
+        age = obj.age
+        if Commands.available_slot_18 in text or age < 44:
+            data = api_obj.slot_by_pincode(pincode)
+            resp = [a for a in data if a.is_18_session_available]
+            if len(resp) > 0:
+                reply_text = lis_to_str_with_indx(
+                    [a.detail_available_18_info_str for a in resp]
+                )
+            else:
+                reply_text = f"No Slots Available for Age: {age} in pincode: {pincode}"
+        elif Commands.available_slot_45 in text or age > 44:
+            data = api_obj.slot_by_pincode(pincode)
+            resp = [a for a in data if a.is_45_session_available]
+            if len(resp) > 0:
+                reply_text = lis_to_str_with_indx(
+                    [a.detail_available_45_info_str for a in resp]
+                )
+            else:
+                reply_text = f"No Slots Available for Age: {age} in pincode: {pincode}"
 
-        else:
-            reply_text = "No Slots Available"
-
+    except Exception as e:
+        reply_text = str(e)
     update.message.reply_text(
         reply_text,
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),

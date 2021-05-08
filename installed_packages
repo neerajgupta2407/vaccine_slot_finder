@@ -5,3 +5,5 @@ django-kronos==1.0
 requests==2.23.0
 ipython
 #pre-commit
+fabric==2.5.0
+django-environ

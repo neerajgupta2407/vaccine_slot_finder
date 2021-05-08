@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from typing import List
 
 
+def lis_to_str_with_indx(lis):
+    return "\n".join([f"{idx + 1}. {b}" for idx, b in enumerate(lis)])
+
+
 @dataclass
 class SessionObject:
     session_id: str
@@ -10,6 +14,10 @@ class SessionObject:
     min_age_limit: int
     vaccine: str
     slots: List[str]
+
+    @property
+    def slots_str(self):
+        return ", ".join(self.slots)
 
     @property
     def is_available(self):
@@ -25,7 +33,8 @@ class SessionObject:
 
     @property
     def display_info_str(self):
-        return f"{self.date}:  {self.vaccine} -> Available:{self.available_capacity}"
+        text = f"{self.date}:  {self.vaccine} -> Available:{self.available_capacity}\n"
+        return text
 
 
 @dataclass(init=False)
