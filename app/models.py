@@ -1,9 +1,10 @@
 # Create your models here.
+from decouple import config
 from django.db import models
 
 from vaccine_slots.settings import telegram_bot
 
-MAX_ALERTS = 5
+MAX_ALERTS = config("max_alerts")
 
 
 class AgeType:
@@ -54,12 +55,14 @@ class TelegramAccount(models.Model):
     def alert(self, pincode, age):
         text = f"Age:{age}. Pincode: {pincode}. "
         if age < 45:
+            self.alerts_18 = 0  # resetting the alerts count.
             if self.registered_18:
                 text = text + "Already registered"
             else:
                 self.registered_18 = True
                 text = text + f"Registered Successfully"
         else:
+            self.alerts_45 = 0  # resetting the alerts count.
             if self.registered_45:
                 text = text + "Already registered"
             else:
