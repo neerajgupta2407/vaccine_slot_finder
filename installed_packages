@@ -1,0 +1,7 @@
+django
+python-decouple==3.3
+python-telegram-bot
+django-kronos==1.0
+requests==2.23.0
+ipython
+#pre-commit
