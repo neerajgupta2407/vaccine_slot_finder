@@ -7,7 +7,7 @@
 """
 Simple Bot to reply to Telegram messages.
 First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
+the Dispatcher and alerted at their respective places.
 Then, the bot is started and runs until we press Ctrl-C on the command line.
 Usage:
 Basic Echobot example, repeats messages.
@@ -24,6 +24,8 @@ from telegram.ext import CallbackContext, Filters, MessageHandler, Updater
 from apis.apisetu.apisetu import APISETU
 from app.models import TelegramAccount
 
+from .utils import *
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
@@ -31,31 +33,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def lis_to_str_with_indx(lis):
-    return "\n".join([f"{idx + 1}. {b}" for idx, b in enumerate(lis)])
-
-
-def lis_to_str(lis):
-    return "\n".join([f"{b}" for idx, b in enumerate(lis)])
-
-
-def remove_extra_delimiter(query_str, delimeter=" "):
-    delim = delimeter
-    query_str = delim.join([a for a in query_str.lower().split(delim) if a != ""])
-    return query_str
-
-
 SEARCH_FORMAT = "Please Enter `Age pincode` \n\tEg: 22 110027"
-Register_format = "Please Enter `register Age pincode` for getting alert on slot availability.\n\tEg: register 22 110027"
+alert_format = "Please Enter `alert Age pincode` for getting alert on slot availability.\n\tEg: alert 22 110027"
 
 
 class Operation:
     search = "search"
-    register = "register"
+    alert = "alert"
 
     @classmethod
     def get_name(cls, st):
-        for a in [cls.search, cls.register]:
+        for a in [cls.search, cls.alert]:
             if st in a:
                 return a
 
@@ -86,8 +74,8 @@ class QueryFilter:
 class Commands:
     available_slot_18 = "available_slot_18"
     available_slot_45 = "available_slot_45"
-    register_for_18 = "Register for 18+"
-    register_for_45 = "Register for 45+"
+    alert_for_18 = "alert for 18+"
+    alert_for_45 = "alert for 45+"
     help = "help"
     start = "start"
 
@@ -103,11 +91,11 @@ def command_handler(update: Update, context: CallbackContext) -> None:
     reply_text = "Invalid command"
     reply_keyboard = [
         ["18 110027", "45 110027"],
-        ["register 18 110027", "register 45 110027"],
+        ["alert 18 110027", "alert 45 110027"],
         [Commands.help],
     ]
-    if text in [Commands.start, Commands.help]:
-        lis = [SEARCH_FORMAT, Register_format]
+    if text in [Commands.start, Commands.help, "/start"]:
+        lis = [SEARCH_FORMAT, alert_format]
         reply_text = lis_to_str_with_indx(lis)
     else:
         try:
@@ -115,11 +103,11 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             pincode = obj.pincode
             age = obj.age
             operation = obj.operation
-            if operation == Operation.register:
-                if Commands.register_for_18 == text or age < 44:
-                    reply_text = tele.register(pincode, 18)
-                elif Commands.register_for_45 == text or age > 44:
-                    reply_text = tele.register(pincode, 45)
+            if operation == Operation.alert:
+                if Commands.alert_for_18 == text or age < 44:
+                    reply_text = tele.alert(pincode, 18)
+                elif Commands.alert_for_45 == text or age > 44:
+                    reply_text = tele.alert(pincode, 45)
             else:
                 if Commands.available_slot_18 in text or age < 44:
                     data = api_obj.slot_by_pincode(pincode)
@@ -159,7 +147,7 @@ def main():
     # Post version 12 this will no longer be necessary
     token = config("telegram_bot_key")
     updater = Updater(token, use_context=True)
-    # Get the dispatcher to register handlers
+    # Get the dispatcher to alert handlers
     dispatcher = updater.dispatcher
 
     # on different commands - answer in Telegram

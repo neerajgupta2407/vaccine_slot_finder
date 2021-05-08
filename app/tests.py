@@ -19,8 +19,8 @@ class TestRegistration(TestCase):
         pincode = "110027"
         self.assertFalse(self.tele.registered_18)
         self.assertFalse(self.tele.registered_45)
-        self.tele.register(pincode, 20)
-        self.tele.register(pincode, 45)
+        self.tele.alert(pincode, 20)
+        self.tele.alert(pincode, 45)
         self.tele.refresh_from_db()
         self.assertTrue(self.tele.registered_18)
         self.assertTrue(self.tele.registered_45)

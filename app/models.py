@@ -3,6 +3,13 @@ from django.db import models
 
 from vaccine_slots.settings import telegram_bot
 
+MAX_ALERTS = 5
+
+
+class AgeType:
+    _forty_five = 45
+    _eighteen = 18
+
 
 class TelegramAccount(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
@@ -44,7 +51,7 @@ class TelegramAccount(models.Model):
         cls.objects.filter(chat_id=chat_id, bot_name=bot_name).update(is_active=False)
         return True
 
-    def register(self, pincode, age):
+    def alert(self, pincode, age):
         text = f"Age:{age}. Pincode: {pincode}. "
         if age < 45:
             if self.registered_18:
@@ -61,3 +68,15 @@ class TelegramAccount(models.Model):
         self.pincode = pincode
         self.save()
         return text
+
+    @classmethod
+    def registered_45_plus(cls):
+        return cls.objects.filter(
+            is_active=True, registered_45=True, alerts_45__lte=MAX_ALERTS
+        )
+
+    @classmethod
+    def registered_18_plus(cls):
+        return cls.objects.filter(
+            is_active=True, registered_18=True, alerts_18__lte=MAX_ALERTS
+        )
