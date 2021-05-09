@@ -1,6 +1,11 @@
 # REF: https://apisetu.gov.in/public/marketplace/api/cowin
 HOST = "https://cdn-api.co-vin.in/api/"
 FIND_BY_PIN_SLOTS_URL = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode={pincode}&date={date}"
+LIST_STATES_URL = "https://cdn-api.co-vin.in/api/v2/admin/location/states"
+LIST_DISTRICT_URL = (
+    "https://cdn-api.co-vin.in/api/v2/admin/location/districts/{state_id}"
+)
+FIND_BY_DISTRICT_SLOTS_URL = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?district_id={district_id}&date={date}"
 
 
 REQUEST_HEADERS = {

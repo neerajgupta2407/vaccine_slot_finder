@@ -2,8 +2,16 @@ from dataclasses import dataclass
 from typing import List
 
 
-def lis_to_str_with_indx(lis):
-    return "\n".join([f"{idx + 1}. {b}" for idx, b in enumerate(lis)])
+@dataclass
+class StateObject:
+    state_id: int
+    state_name: str
+
+
+@dataclass
+class DistrictObject:
+    district_id: int
+    district_name: str
 
 
 @dataclass

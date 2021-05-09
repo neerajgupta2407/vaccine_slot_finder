@@ -1,7 +1,7 @@
 # Register your models here.
 from django.contrib import admin
 
-from app.models import TelegramAccount
+from app.models import *
 
 
 class TelegramAccountAdmin(admin.ModelAdmin):
@@ -19,4 +19,11 @@ class TelegramAccountAdmin(admin.ModelAdmin):
     date_hierarchy = "create_time"
 
 
+class DisrtictAdmin(admin.ModelAdmin):
+    list_display = ["__str__"]
+    list_filter = ["state"]
+
+
 admin.site.register(TelegramAccount, TelegramAccountAdmin)
+admin.site.register(States)
+admin.site.register(Disrtict, DisrtictAdmin)

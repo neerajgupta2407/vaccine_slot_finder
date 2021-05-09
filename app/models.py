@@ -2,6 +2,7 @@
 from decouple import config
 from django.db import models
 
+from apis.apisetu.apisetu import APISETU
 from vaccine_slots.settings import telegram_bot
 
 MAX_ALERTS = config("max_alerts")
@@ -10,6 +11,45 @@ MAX_ALERTS = config("max_alerts")
 class AgeType:
     _forty_five = 45
     _eighteen = 18
+
+
+class States(models.Model):
+    state_id = models.IntegerField(primary_key=True)
+    state_name = models.CharField(max_length=100)
+
+    @classmethod
+    def sync(cls):
+        setu_obj = APISETU()
+        states = setu_obj.get_states()
+        objs = [cls(state_id=a.state_id, state_name=a.state_name) for a in states]
+        cls.objects.bulk_create(objs)
+
+    def __str__(self):
+        return f"States <{self.state_id}: {self.state_name}>"
+
+
+class Disrtict(models.Model):
+    district_id = models.IntegerField(primary_key=True)
+    district_name = models.CharField(max_length=100)
+    state = models.ForeignKey(States, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"District <{self.district_id}: {self.district_name}>"
+
+    @classmethod
+    def sync(cls):
+        setu_obj = APISETU()
+        for state in States.objects.all():
+            districts = setu_obj.get_district(state.pk)
+            objs = [
+                cls(
+                    district_id=a.district_id,
+                    district_name=a.district_name,
+                    state_id=state.pk,
+                )
+                for a in districts
+            ]
+            cls.objects.bulk_create(objs)
 
 
 class TelegramAccount(models.Model):

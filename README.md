@@ -10,7 +10,23 @@ Setup.
 4) Run Commands: 
 
     `python manage.py migrate`
-
+    
+    `python manage.py installtasks`
+    
     `python manage.py telebot`
 
+5) Sync States and District
+
+    ```
+    from app.models import *
+    States.sync()
+    Disrtict.sync()
+    ```
+
+6) Create user for admin
+    `python manage.py createsuperuser`
+    
+7) To Open Admin on browser http://127.0.0.1:8000
+
+    `python manage.py runserver 0.0.0.0:8000`
 
