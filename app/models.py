@@ -1,4 +1,5 @@
 # Create your models here.
+import telegram
 from decouple import config
 from django.db import models
 
@@ -75,7 +76,17 @@ class TelegramAccount(models.Model):
     alerts_45 = models.IntegerField(default=0)
 
     def send_message(self, msg):
-        telegram_bot.send_message(chat_id=self.chat_id, text=msg)
+        max_size = 4000
+        if len(msg) > max_size:
+            chunks = [msg[i : i + max_size] for i in range(0, len(msg), max_size)]
+            for msg in chunks:
+                telegram_bot.send_message(
+                    chat_id=self.chat_id, text=msg, parse_mode=telegram.ParseMode.HTML
+                )
+        else:
+            telegram_bot.send_message(
+                chat_id=self.chat_id, text=msg, parse_mode=telegram.ParseMode.HTML
+            )
 
     @classmethod
     def subscribe(cls, chat_id, username, meta_info={}):

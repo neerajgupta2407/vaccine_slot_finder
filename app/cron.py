@@ -26,7 +26,13 @@ def get_resp_by_district(d_id):
         return resp
 
 
-@kronos.register("*/10 * * * *")
+@kronos.register("0 1 * * *")
+def reset_counter():
+    clients = TelegramAccount.objects.all()
+    clients.update(alerts_45=0, alerts_18=0)
+
+
+@kronos.register("*/5 * * * *")
 def send_alerts():
     # Function send out the alerts to user who has subscribed for particular pincode.
     clients = TelegramAccount.objects.filter(is_active=True)
@@ -51,7 +57,8 @@ def notify_to_clients(client, centers, age_type, **kwargs):
     if kwargs.get("district_id"):
         district = Disrtict.objects.get(pk=kwargs.get("district_id"))
         st = f"District: {district.district_name}"
-    init_msg = f"We have found a slot for you in {st}.\n"
+    st = st + f" Age: {age_type}+"
+    init_msg = f"<b>We have found a slot for you in {st}.</b>\n"
     if age_type == AgeType._eighteen:
         for cent in centers:
             if cent.is_18_session_available:
