@@ -83,19 +83,29 @@ class Commands:
 
 def slots_str_by_lis(data, age_type, error_msg="No Slots available"):
     reply_text = error_msg
+    is_available = False
     if age_type == AgeType._forty_five:
         resp = [a for a in data if a.is_45_session_available]
         if len(resp) > 0:
             reply_text = lis_to_str_with_indx(
                 [a.detail_available_45_info_str for a in resp]
             )
+            is_available = True
     elif age_type == AgeType._eighteen:
         resp = [a for a in data if a.is_18_session_available]
         if len(resp) > 0:
             reply_text = lis_to_str_with_indx(
                 [a.detail_available_18_info_str for a in resp]
             )
-    return reply_text
+            is_available = True
+    return is_available, reply_text
+
+
+def append_reply_keyboard(reply_keyboard, to_be_append=[]):
+    new_keyboard = []
+    if len(to_be_append) > 0:
+        [new_keyboard.append([a]) for a in to_be_append]
+    return new_keyboard + reply_keyboard
 
 
 def command_handler(update: Update, context: CallbackContext) -> None:
@@ -103,27 +113,33 @@ def command_handler(update: Update, context: CallbackContext) -> None:
     district_pretext = "District:"
     slot_18_pretext = "18+ Slot in "
     slot_45_pretext = "45+ Slot in "
+    back_pretext = "<<Back To: "
+    notify_str_pretext = "Notify me on Slot Availability in "
+
     api_obj = APISETU()
     text = update.message.text
     tele_id = update.message.chat_id
     bot_name = context.bot.username
     username = update.message.from_user.full_name
     tele = TelegramAccount.subscribe(tele_id, username)
+    recent_searches = tele.get_recent_searches()
     user_info = {}
     reply_text = "Invalid command"
-    reply_keyboard = [
-        ["18 110027", "45 110027"],
-        ["alert 18 110027", "alert 45 110027"],
-        [Commands.list_states],
-        [Commands.help],
-    ]
+    reply_keyboard = [[Commands.list_states], [Commands.help]]
+    text = text.replace(back_pretext, "")
     if text in [Commands.start, Commands.help, "/start"]:
-        lis = [SEARCH_FORMAT, alert_format]
+        lis = [
+            "Please select the State from Dropdown or you can search by typing below options",
+            SEARCH_FORMAT,
+            alert_format,
+        ]
         reply_text = lis_to_str_with_indx(lis)
+        reply_keyboard = append_reply_keyboard(reply_keyboard, recent_searches)
     elif text == Commands.list_states:
         states = States.objects.all().order_by("state_name")
         reply_text = "Here is the list of States"
         reply_keyboard = [[state_pretext + a.state_name] for a in states]
+        reply_keyboard = append_reply_keyboard(reply_keyboard, recent_searches)
     elif text.startswith(state_pretext):
         state_name = text.replace(state_pretext, "")
         disticts = Disrtict.objects.filter(state__state_name=state_name).order_by(
@@ -131,35 +147,60 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         )
         reply_text = f"Here is the list of District for State: {state_name}"
         reply_keyboard = [[district_pretext + a.district_name] for a in disticts]
-
+        reply_keyboard.insert(0, [back_pretext + Commands.list_states])
     elif text.startswith(district_pretext):
+        tele.save_search_query(text)
         district_name = text.replace(district_pretext, "")
         district = Disrtict.objects.get(district_name=district_name)
         reply_text = f"Please select below option"
         reply_keyboard = [
             [slot_18_pretext + district.district_name],
             [slot_45_pretext + district.district_name],
+            [back_pretext + state_pretext + district.state.state_name],
         ]
 
     elif text.startswith(slot_18_pretext):
         district_name = text.replace(slot_18_pretext, "")
         district = Disrtict.objects.get(district_name=district_name)
         data = api_obj.slot_by_district(district.pk)
-        reply_text = slots_str_by_lis(
-            data,
-            AgeType._eighteen,
-            error_msg=f"No Slots Available for Age: 18+ in district: {district_name}",
+        error_msg = f"No Slots Available for Age: 18+ in district: {district_name}"
+        is_available, reply_text = slots_str_by_lis(
+            data, AgeType._eighteen, error_msg=error_msg
         )
+        if not is_available:
+            # Subscibing the user when alots are available.
+            tele.alert(AgeType._eighteen, district_id=district.pk)
+            reply_text += (
+                f"\n We will notify you when slot will be available in {district_name}"
+            )
+        reply_keyboard = [
+            # [notify_str_pretext],
+            [back_pretext + district_pretext + district_name]
+        ]
 
     elif text.startswith(slot_45_pretext):
         district_name = text.replace(slot_45_pretext, "")
         district = Disrtict.objects.get(district_name=district_name)
         data = api_obj.slot_by_district(district.pk)
-        reply_text = slots_str_by_lis(
+        is_available, reply_text = slots_str_by_lis(
             data,
             AgeType._forty_five,
             error_msg=f"No Slots Available for Age: 45+ in district: {district_name}",
         )
+        if not is_available:
+            # Subscibing the user when alots are available.
+            tele.alert(AgeType._forty_five, district_id=district.pk)
+            reply_text += (
+                f"\n We will notify you when slot will be available in {district_name}"
+            )
+
+        reply_keyboard = [
+            # [notify_str_pretext],
+            [back_pretext + district_pretext + district_name]
+        ]
+
+    elif text.startswith(notify_str_pretext):
+        reply_text = "We will Notify You when the slots will be available."
 
     else:
         try:
@@ -175,7 +216,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             else:
                 if Commands.available_slot_18 in text or age < 44:
                     data = api_obj.slot_by_pincode(pincode)
-                    reply_text = slots_str_by_lis(
+                    is_available, reply_text = slots_str_by_lis(
                         data,
                         AgeType._eighteen,
                         error_msg=f"No Slots Available for Age: {age} in pincode: {pincode}",
@@ -183,7 +224,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
 
                 elif Commands.available_slot_45 in text or age > 44:
                     data = api_obj.slot_by_pincode(pincode)
-                    reply_text = slots_str_by_lis(
+                    is_available, reply_text = slots_str_by_lis(
                         data,
                         AgeType._forty_five,
                         error_msg=f"No Slots Available for Age: {age} in pincode: {pincode}",
@@ -191,6 +232,8 @@ def command_handler(update: Update, context: CallbackContext) -> None:
 
         except Exception as e:
             reply_text = str(e)
+
+    reply_text = reply_text[:4000]
     update.message.reply_text(
         reply_text,
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),

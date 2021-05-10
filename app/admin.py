@@ -8,9 +8,8 @@ class TelegramAccountAdmin(admin.ModelAdmin):
     list_display = [
         "username",
         "chat_id",
-        "pincode",
-        "registered_18",
-        "registered_45",
+        "recent_searches",
+        "saved_alerts",
         "alerts_18",
         "alerts_45",
     ]

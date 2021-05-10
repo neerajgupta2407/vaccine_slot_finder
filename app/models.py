@@ -3,14 +3,19 @@ from decouple import config
 from django.db import models
 
 from apis.apisetu.apisetu import APISETU
+from app.utils import *
 from vaccine_slots.settings import telegram_bot
 
 MAX_ALERTS = config("max_alerts")
+SHOW_LAST_N_SEARCH = 3
+
+CONST_DISTRICT_IDS = "district_ids"
+CONST_PINCODES = "pincodes"
 
 
 class AgeType:
-    _forty_five = 45
-    _eighteen = 18
+    _forty_five = "45"
+    _eighteen = "18"
 
 
 class States(models.Model):
@@ -59,6 +64,11 @@ class TelegramAccount(models.Model):
     username = models.CharField(max_length=30, null=True, blank=True)
     chat_id = models.CharField(max_length=20)
     pincode = models.IntegerField(default=0)
+
+    # saved_alerts = {'45': {'district_ids': [-2017859857], 'pincodes': ['110027']}, '18': {'district_ids': [-2017859857], 'pincodes': ['110028', '110027']}}
+    saved_alerts = models.JSONField(null=True)
+
+    recent_searches = models.JSONField(null=True)
     registered_18 = models.BooleanField(default=False)
     registered_45 = models.BooleanField(default=False)
     alerts_18 = models.IntegerField(default=0)
@@ -92,34 +102,70 @@ class TelegramAccount(models.Model):
         cls.objects.filter(chat_id=chat_id, bot_name=bot_name).update(is_active=False)
         return True
 
-    def alert(self, pincode, age):
-        text = f"Age:{age}. Pincode: {pincode}. "
-        if age < 45:
-            self.alerts_18 = 0  # resetting the alerts count.
-            if self.registered_18:
-                text = text + "Already registered"
-            else:
-                self.registered_18 = True
-                text = text + f"Registered Successfully"
-        else:
-            self.alerts_45 = 0  # resetting the alerts count.
-            if self.registered_45:
-                text = text + "Already registered"
-            else:
-                self.registered_45 = True
-                text = text + "Registered Successfully."
-        self.pincode = pincode
+    def save_search_query(self, query):
+        self.recent_searches = self.recent_searches or []
+        self.recent_searches = insert_top(self.recent_searches, query)
         self.save()
-        return text
+
+    def get_recent_searches(self, last_n_searches=SHOW_LAST_N_SEARCH):
+        lis = self.recent_searches or []
+        return lis[:last_n_searches]
+
+    def alert(self, age_type, **kwargs):
+        district_id = kwargs.get("district_id")
+        pincode = kwargs.get("pincode")
+        dic = self.saved_alerts or {}
+        dic[age_type] = dic.get(age_type, {})
+        if district_id:
+            dic[age_type][CONST_DISTRICT_IDS] = dic[age_type].get(
+                CONST_DISTRICT_IDS, []
+            )
+            dic[age_type][CONST_DISTRICT_IDS] = insert_top(
+                dic[age_type][CONST_DISTRICT_IDS], district_id
+            )
+
+        if pincode:
+            dic[age_type][CONST_PINCODES] = dic[age_type].get(CONST_PINCODES, [])
+            dic[age_type][CONST_PINCODES] = insert_top(
+                dic[age_type][CONST_PINCODES], pincode
+            )
+        self.saved_alerts = dic
+        self.alerts_18 = 0
+        self.alerts_45 = 0
+        self.save()
+        st = f"We will notify you when slots will be available for age {age_type} in "
+        if district_id:
+            d = Disrtict.objects.get(pk=district_id)
+            st += f"{d.district_name}"
+        if pincode:
+            st += f"Pincode {pincode}"
+        return st
 
     @classmethod
-    def registered_45_plus(cls):
-        return cls.objects.filter(
-            is_active=True, registered_45=True, alerts_45__lte=MAX_ALERTS
-        )
+    def subscribed_data(cls):
+        objs = cls.objects.filter(is_active=True)
+        pincodes = []
+        district_ids = []
+        for obj in objs:
+            if obj.saved_alerts:
+                for k, v in obj.saved_alerts.items():
+                    pincodes.extend(v.get(CONST_PINCODES, []))
+                    district_ids.extend(v.get(CONST_DISTRICT_IDS, []))
 
-    @classmethod
-    def registered_18_plus(cls):
-        return cls.objects.filter(
-            is_active=True, registered_18=True, alerts_18__lte=MAX_ALERTS
-        )
+        return {
+            CONST_PINCODES: list(set(pincodes)),
+            CONST_DISTRICT_IDS: list(set(district_ids)),
+        }
+
+    def get_subscribed_data(self):
+        pincodes = []
+        district_ids = []
+        if self.saved_alerts:
+            for k, v in self.saved_alerts.items():
+                pincodes.extend(v.get(CONST_PINCODES, []))
+                district_ids.extend(v.get(CONST_DISTRICT_IDS, []))
+
+        return {
+            CONST_PINCODES: list(set(pincodes)),
+            CONST_DISTRICT_IDS: list(set(district_ids)),
+        }
