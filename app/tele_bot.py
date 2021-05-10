@@ -210,9 +210,11 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             operation = obj.operation
             if operation == Operation.alert:
                 if Commands.alert_for_18 == text or age < 44:
-                    reply_text = tele.alert(pincode, 18)
+                    reply_text = tele.alert(age_type=AgeType._eighteen, pincode=pincode)
                 elif Commands.alert_for_45 == text or age > 44:
-                    reply_text = tele.alert(pincode, 45)
+                    reply_text = tele.alert(
+                        age_type=AgeType._forty_five, pincode=pincode
+                    )
             else:
                 if Commands.available_slot_18 in text or age < 44:
                     data = api_obj.slot_by_pincode(pincode)

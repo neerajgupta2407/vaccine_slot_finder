@@ -35,8 +35,10 @@ def reset_counter():
 @kronos.register("*/5 * * * *")
 def send_alerts():
     # Function send out the alerts to user who has subscribed for particular pincode.
-    clients = TelegramAccount.objects.filter(is_active=True)
+    clients = TelegramAccount.objects.filter(is_active=True).exclude(saved_alerts=None)
     for client in clients:
+        if not client.saved_alerts:
+            continue
         for age, data in client.saved_alerts.items():
             pincodes = data.get(CONST_PINCODES, [])
             district_ids = data.get(CONST_DISTRICT_IDS)
@@ -86,14 +88,14 @@ def notify_to_clients(client, centers, age_type, **kwargs):
 
 
 def notify_clients(client, centers, age_type, init_msg_str):
-    if age_type == AgeType._eighteen:
+    if age_type == AgeType._eighteen and client.alerts_18 < MAX_ALERTS:
         # sending notification to those who has subscribed for 18+
         msg = lis_to_str_with_indx([a.detail_available_18_info_str for a in centers])
         msg = init_msg_str + msg
         client.alerts_18 = client.alerts_18 + 1
         client.save()
 
-    elif age_type == AgeType._forty_five:
+    elif age_type == AgeType._forty_five and client.alerts_45 < MAX_ALERTS:
         # sending notification to those who has subscribed for 45+
         msg = lis_to_str_with_indx([a.detail_available_45_info_str for a in centers])
         msg = init_msg_str + msg
