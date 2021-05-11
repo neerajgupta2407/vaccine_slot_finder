@@ -12,8 +12,10 @@ class TelegramAccountAdmin(admin.ModelAdmin):
         "saved_alerts",
         "alerts_18",
         "alerts_45",
+        "is_active",
+        "create_time",
     ]
-    list_filter = ["pincode", "registered_18", "registered_45"]
+    list_filter = ["pincode", "registered_18", "registered_45", "is_active"]
     search_fields = ["pincode", "username"]
     date_hierarchy = "create_time"
 

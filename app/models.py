@@ -76,17 +76,24 @@ class TelegramAccount(models.Model):
     alerts_45 = models.IntegerField(default=0)
 
     def send_message(self, msg):
-        max_size = 4000
-        if len(msg) > max_size:
-            chunks = [msg[i : i + max_size] for i in range(0, len(msg), max_size)]
-            for msg in chunks:
+        try:
+            max_size = 4000
+            if len(msg) > max_size:
+                chunks = [msg[i : i + max_size] for i in range(0, len(msg), max_size)]
+                for msg in chunks:
+                    telegram_bot.send_message(
+                        chat_id=self.chat_id,
+                        text=msg,
+                        parse_mode=telegram.ParseMode.HTML,
+                    )
+            else:
                 telegram_bot.send_message(
                     chat_id=self.chat_id, text=msg, parse_mode=telegram.ParseMode.HTML
                 )
-        else:
-            telegram_bot.send_message(
-                chat_id=self.chat_id, text=msg, parse_mode=telegram.ParseMode.HTML
-            )
+        except telegram.error.Unauthorized:
+            # Deactivating the user..
+            self.is_active = False
+            self.save()
 
     @classmethod
     def subscribe(cls, chat_id, username, meta_info={}):
@@ -143,6 +150,7 @@ class TelegramAccount(models.Model):
         self.saved_alerts = dic
         self.alerts_18 = 0
         self.alerts_45 = 0
+        self.is_active = True
         self.save()
         st = f"We will notify you when slots will be available for age {age_type} in "
         if district_id:
