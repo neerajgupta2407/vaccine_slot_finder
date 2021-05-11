@@ -7,6 +7,8 @@ LIST_DISTRICT_URL = (
 )
 FIND_BY_DISTRICT_SLOTS_URL = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?district_id={district_id}&date={date}"
 
+COWIN_REGISTRATION_LINK = "https://selfregistration.cowin.gov.in/"
+COWIN_REGISTRATION_TEXT = f"<b>Open COWIN: {COWIN_REGISTRATION_LINK}</b>"
 
 REQUEST_HEADERS = {
     "authority": "cdn-api.co-vin.in",

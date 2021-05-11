@@ -17,6 +17,7 @@ bot.
 # Enable logging
 import logging
 
+import telegram
 from decouple import config
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import CallbackContext, Filters, MessageHandler, Updater
@@ -98,6 +99,8 @@ def slots_str_by_lis(data, age_type, error_msg="No Slots available"):
                 [a.detail_available_18_info_str for a in resp]
             )
             is_available = True
+    if is_available:
+        reply_text = append_cowin_link(reply_text)
     return is_available, reply_text
 
 
@@ -239,6 +242,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(
         reply_text,
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+        parse_mode=telegram.ParseMode.HTML,
     )
 
 

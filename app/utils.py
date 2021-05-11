@@ -1,3 +1,6 @@
+from apis.apisetu.config import COWIN_REGISTRATION_TEXT
+
+
 def lis_to_str_with_indx(lis):
     return "\n".join([f"{idx + 1}. {b}" for idx, b in enumerate(lis)])
 
@@ -18,3 +21,7 @@ def insert_top(lis, item):
         lis.remove(item)
     lis.insert(0, item)
     return lis
+
+
+def append_cowin_link(msg):
+    return msg + "\n\n" + COWIN_REGISTRATION_TEXT

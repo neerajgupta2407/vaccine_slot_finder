@@ -32,7 +32,7 @@ def reset_counter():
     clients.update(alerts_45=0, alerts_18=0)
 
 
-@kronos.register("*/5 * * * *")
+@kronos.register("*/5 */2 * * *")
 def send_alerts():
     # Function send out the alerts to user who has subscribed for particular pincode.
     clients = TelegramAccount.objects.filter(is_active=True).exclude(saved_alerts=None)
@@ -101,4 +101,5 @@ def notify_clients(client, centers, age_type, init_msg_str):
         msg = init_msg_str + msg
         client.alerts_45 = client.alerts_45 + 1
         client.save()
+    msg = append_cowin_link(msg)
     client.send_message(msg)
