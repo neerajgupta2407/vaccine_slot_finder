@@ -26,13 +26,13 @@ def get_resp_by_district(d_id):
         return resp
 
 
-@kronos.register("0 1 * * *")
+@kronos.register("0 */2 * * *")
 def reset_counter():
     clients = TelegramAccount.objects.all()
     clients.update(alerts_45=0, alerts_18=0)
 
 
-@kronos.register("*/5 */2 * * *")
+@kronos.register("*/5 * * * *")
 def send_alerts():
     # Function send out the alerts to user who has subscribed for particular pincode.
     clients = TelegramAccount.objects.filter(is_active=True).exclude(saved_alerts=None)
@@ -41,7 +41,7 @@ def send_alerts():
             continue
         for age, data in client.saved_alerts.items():
             pincodes = data.get(CONST_PINCODES, [])
-            district_ids = data.get(CONST_DISTRICT_IDS)
+            district_ids = data.get(CONST_DISTRICT_IDS, [])
             for pincode in pincodes:
                 resp = get_resp_by_pincode(pincode)
                 notify_to_clients(client, resp, age, pincode=pincode)
@@ -88,6 +88,7 @@ def notify_to_clients(client, centers, age_type, **kwargs):
 
 
 def notify_clients(client, centers, age_type, init_msg_str):
+    msg = None
     if age_type == AgeType._eighteen and client.alerts_18 < MAX_ALERTS:
         # sending notification to those who has subscribed for 18+
         msg = lis_to_str_with_indx([a.detail_available_18_info_str for a in centers])
@@ -101,5 +102,6 @@ def notify_clients(client, centers, age_type, init_msg_str):
         msg = init_msg_str + msg
         client.alerts_45 = client.alerts_45 + 1
         client.save()
-    msg = append_cowin_link(msg)
-    client.send_message(msg)
+    if msg:
+        msg = append_cowin_link(msg)
+        client.send_message(msg)

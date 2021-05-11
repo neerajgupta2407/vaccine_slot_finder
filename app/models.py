@@ -7,7 +7,7 @@ from apis.apisetu.apisetu import APISETU
 from app.utils import *
 from vaccine_slots.settings import telegram_bot
 
-MAX_ALERTS = config("max_alerts")
+MAX_ALERTS = int(config("max_alerts"))
 SHOW_LAST_N_SEARCH = 3
 
 CONST_DISTRICT_IDS = "district_ids"
