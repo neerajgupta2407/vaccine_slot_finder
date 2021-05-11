@@ -63,7 +63,7 @@ def notify_to_clients(client, centers, age_type, **kwargs):
     init_msg = f"<b>We have found a slot for you in {st}.</b>\n"
     if age_type == AgeType._eighteen:
         for cent in centers:
-            if cent.is_18_session_available:
+            if cent.is_18_session_available and cent.min_18_slots_available:
                 eighteen_available = True
                 break
         if eighteen_available:
@@ -75,7 +75,7 @@ def notify_to_clients(client, centers, age_type, **kwargs):
             )
     if age_type == AgeType._forty_five:
         for cent in centers:
-            if cent.is_45_session_available:
+            if cent.is_45_session_available and cent.min_45_slots_available:
                 fortyfive_available = True
                 break
         if fortyfive_available:
@@ -104,4 +104,10 @@ def notify_clients(client, centers, age_type, init_msg_str):
         client.save()
     if msg:
         msg = append_cowin_link(msg)
+        client.send_message(msg)
+
+
+def send_message_to_all(msg):
+    clients = TelegramAccount.objects.filter(is_active=True)
+    for client in clients:
         client.send_message(msg)

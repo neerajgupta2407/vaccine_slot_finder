@@ -24,6 +24,7 @@ from telegram.ext import CallbackContext, Filters, MessageHandler, Updater
 
 from apis.apisetu.apisetu import APISETU
 from app.models import AgeType, Disrtict, States, TelegramAccount
+from vaccine_slots.settings import MIN_SLOTS
 
 from .utils import *
 
@@ -173,9 +174,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         if not is_available:
             # Subscibing the user when alots are available.
             tele.alert(AgeType._eighteen, district_id=district.pk)
-            reply_text += (
-                f"\n We will notify you when slot will be available in {district_name}"
-            )
+            reply_text += f"\n<b>We will notify you when atleasst {MIN_SLOTS} slots will be available in {district_name}</b>"
         reply_keyboard = [
             # [notify_str_pretext],
             [back_pretext + district_pretext + district_name]
@@ -193,9 +192,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         if not is_available:
             # Subscibing the user when alots are available.
             tele.alert(AgeType._forty_five, district_id=district.pk)
-            reply_text += (
-                f"\n We will notify you when slot will be available in {district_name}"
-            )
+            reply_text += f"\nWe will notify you when atleasst {MIN_SLOTS} slots will be available in {district_name}</b>"
 
         reply_keyboard = [
             # [notify_str_pretext],

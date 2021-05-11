@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
+from vaccine_slots.settings import MIN_SLOTS
+
 
 @dataclass
 class StateObject:
@@ -41,7 +43,7 @@ class SessionObject:
 
     @property
     def display_info_str(self):
-        text = f"{self.date}:  {self.vaccine} -> Available:{self.available_capacity}\n"
+        text = f"{self.date}:  {self.vaccine} -> Available Slots:{self.available_capacity}\n"
         return text
 
 
@@ -79,8 +81,34 @@ class CenterObject:
         return len(self.available_18_sessions) > 0
 
     @property
+    def min_18_slots_available(self):
+        return (
+            len(
+                [
+                    a
+                    for a in self.sessions
+                    if a.is_18 and a.available_capacity >= MIN_SLOTS
+                ]
+            )
+            > 0
+        )
+
+    @property
     def available_45_sessions(self):
         return [a for a in self.sessions if a.is_45 and a.is_available]
+
+    @property
+    def min_45_slots_available(self):
+        return (
+            len(
+                [
+                    a
+                    for a in self.sessions
+                    if a.is_45 and a.available_capacity >= MIN_SLOTS
+                ]
+            )
+            > 0
+        )
 
     @property
     def is_45_session_available(self):

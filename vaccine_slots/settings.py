@@ -125,3 +125,5 @@ if config("telegram_bot_key"):
     telegram_bot = telegram.Bot(token=config("telegram_bot_key"))
 else:
     telegram_bot = None
+
+MIN_SLOTS = int(config("min_slots"))
