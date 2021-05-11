@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 SEARCH_FORMAT = "Please Enter `Age pincode` \n\tEg: 22 110027"
 alert_format = "Please Enter `alert Age pincode` for getting alert on slot availability.\n\tEg: alert 22 110027"
+back_pretext = "<<Back To: "
 
 
 class Operation:
@@ -48,6 +49,11 @@ class Operation:
         for a in [cls.search, cls.alert]:
             if st in a:
                 return a
+
+
+class Position:
+    Top = "t"
+    Bottom = "b"
 
 
 class QueryFilter:
@@ -79,6 +85,8 @@ class Commands:
     alert_for_18 = "alert for 18+"
     alert_for_45 = "alert for 45+"
     list_states = "List States"
+    more_options = "More Options"
+    clear_alerts = "Stop Alerts"
     help = "help"
     start = "start"
 
@@ -112,14 +120,23 @@ def append_reply_keyboard(reply_keyboard, to_be_append=[]):
     return new_keyboard + reply_keyboard
 
 
+def append_back_button(reply_keyboard, text, position=Position.Top):
+    if text:
+        back_text = back_pretext + text
+        button = [back_text, Commands.more_options]
+        if position == Position.Top:
+            reply_keyboard.insert(0, button)
+        elif position == Position.Bottom:
+            reply_keyboard.append(button)
+    return reply_keyboard
+
+
 def command_handler(update: Update, context: CallbackContext) -> None:
     state_pretext = "State:"
     district_pretext = "District:"
     slot_18_pretext = "18+ Slot in "
     slot_45_pretext = "45+ Slot in "
-    back_pretext = "<<Back To: "
     notify_str_pretext = "Notify me on Slot Availability in "
-
     api_obj = APISETU()
     text = update.message.text
     tele_id = update.message.chat_id
@@ -150,8 +167,11 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             "district_name"
         )
         reply_text = f"Here is the list of District for State: {state_name}"
-        reply_keyboard = [[district_pretext + a.district_name] for a in disticts]
-        reply_keyboard.insert(0, [back_pretext + Commands.list_states])
+        reply_keyboard = append_back_button(
+            [[district_pretext + a.district_name] for a in disticts],
+            Commands.list_states,
+            position=Position.Top,
+        )
     elif text.startswith(district_pretext):
         tele.save_search_query(text)
         district_name = text.replace(district_pretext, "")
@@ -160,8 +180,11 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         reply_keyboard = [
             [slot_18_pretext + district.district_name],
             [slot_45_pretext + district.district_name],
-            [back_pretext + state_pretext + district.state.state_name],
+            # [back_pretext + state_pretext + district.state.state_name],
         ]
+        reply_keyboard = append_back_button(
+            reply_keyboard, state_pretext + district.state.state_name, Position.Bottom
+        )
 
     elif text.startswith(slot_18_pretext):
         district_name = text.replace(slot_18_pretext, "")
@@ -175,10 +198,9 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             # Subscibing the user when alots are available.
             tele.alert(AgeType._eighteen, district_id=district.pk)
             reply_text += f"\n<b>We will notify you when atleasst {MIN_SLOTS} slots will be available in {district_name}</b>"
-        reply_keyboard = [
-            # [notify_str_pretext],
-            [back_pretext + district_pretext + district_name]
-        ]
+        reply_keyboard = append_back_button(
+            [], district_pretext + district_name, Position.Bottom
+        )
 
     elif text.startswith(slot_45_pretext):
         district_name = text.replace(slot_45_pretext, "")
@@ -194,10 +216,9 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             tele.alert(AgeType._forty_five, district_id=district.pk)
             reply_text += f"\nWe will notify you when atleasst {MIN_SLOTS} slots will be available in {district_name}</b>"
 
-        reply_keyboard = [
-            # [notify_str_pretext],
-            [back_pretext + district_pretext + district_name]
-        ]
+        reply_keyboard = append_back_button(
+            [], district_pretext + district_name, Position.Bottom
+        )
 
     elif text.startswith(notify_str_pretext):
         reply_text = "We will Notify You when the slots will be available."
