@@ -74,6 +74,8 @@ class TelegramAccount(models.Model):
     registered_45 = models.BooleanField(default=False)
     alerts_18 = models.IntegerField(default=0)
     alerts_45 = models.IntegerField(default=0)
+    total_alerts_18 = models.IntegerField(default=0)
+    total_alerts_45 = models.IntegerField(default=0)
 
     def send_message(self, msg):
         try:
@@ -109,16 +111,14 @@ class TelegramAccount(models.Model):
         obj.save()
         return obj
 
-    @classmethod
-    def unsubscribe(cls, chat_id, bot_name):
+    def unsubscribe(self):
         """
         UnSubsribes To telegram.
-        :param chat_id:
-        :param bot_name:
         :return:
         """
-        cls.objects.filter(chat_id=chat_id, bot_name=bot_name).update(is_active=False)
-        return True
+        self.saved_alerts = None
+        self.recent_searches = None
+        return self.save()
 
     def save_search_query(self, query):
         self.recent_searches = self.recent_searches or []
@@ -128,6 +128,29 @@ class TelegramAccount(models.Model):
     def get_recent_searches(self, last_n_searches=SHOW_LAST_N_SEARCH):
         lis = self.recent_searches or []
         return lis[:last_n_searches]
+
+    @property
+    def get_saved_alerts_str(self):
+
+        lis = []
+        if self.saved_alerts:
+            msg = "Below are the subscribed alerts."
+            for age, val in self.saved_alerts.items():
+                # st = f"{age}+\n"
+                pincodes = val.get(CONST_PINCODES, [])
+                dist_ids = val.get(CONST_DISTRICT_IDS, [])
+                if pincodes:
+                    lis.append(f"{age}+ Pincodes: {', '.join(map(str, pincodes))}")
+                if dist_ids:
+                    dist_names = list(
+                        Disrtict.objects.filter(pk__in=dist_ids).values_list(
+                            "district_name", flat=True
+                        )
+                    )
+                    lis.append(f"{age}+ Districts: {', '.join(dist_names)}")
+        else:
+            msg = "You are not subscribed for any Alerts"
+        return lis_to_str([msg, lis_to_str_with_indx(lis)])
 
     def alert(self, age_type, **kwargs):
         district_id = kwargs.get("district_id")

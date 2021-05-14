@@ -94,6 +94,7 @@ def notify_clients(client, centers, age_type, init_msg_str):
         msg = lis_to_str_with_indx([a.detail_available_18_info_str for a in centers])
         msg = init_msg_str + msg
         client.alerts_18 = client.alerts_18 + 1
+        client.total_alerts_45 = client.total_alerts_45 + 1
         client.save()
 
     elif age_type == AgeType._forty_five and client.alerts_45 < MAX_ALERTS:
@@ -101,6 +102,7 @@ def notify_clients(client, centers, age_type, init_msg_str):
         msg = lis_to_str_with_indx([a.detail_available_45_info_str for a in centers])
         msg = init_msg_str + msg
         client.alerts_45 = client.alerts_45 + 1
+        client.total_alerts_18 = client.total_alerts_18 + 1
         client.save()
     if msg:
         msg = append_cowin_link(msg)

@@ -87,6 +87,9 @@ class Commands:
     list_states = "List States"
     more_options = "More Options"
     clear_alerts = "Stop Alerts"
+    my_alerts = "My Alerts"
+    stop_alerts = "Stop Alerts"
+    main_menu = "Home"
     help = "help"
     start = "start"
 
@@ -146,9 +149,9 @@ def command_handler(update: Update, context: CallbackContext) -> None:
     recent_searches = tele.get_recent_searches()
     user_info = {}
     reply_text = "Invalid command"
-    reply_keyboard = [[Commands.list_states], [Commands.help]]
+    reply_keyboard = [[Commands.list_states], [Commands.help, Commands.more_options]]
     text = text.replace(back_pretext, "")
-    if text in [Commands.start, Commands.help, "/start"]:
+    if text in [Commands.start, Commands.help, "/start", Commands.main_menu]:
         lis = [
             "Please select the State from Dropdown or you can search by typing below options",
             SEARCH_FORMAT,
@@ -161,6 +164,9 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         reply_text = "Here is the list of States"
         reply_keyboard = [[state_pretext + a.state_name] for a in states]
         reply_keyboard = append_reply_keyboard(reply_keyboard, recent_searches)
+        reply_keyboard = append_back_button(
+            reply_keyboard, Commands.main_menu, Position.Top
+        )
     elif text.startswith(state_pretext):
         state_name = text.replace(state_pretext, "")
         disticts = Disrtict.objects.filter(state__state_name=state_name).order_by(
@@ -220,6 +226,25 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             [], district_pretext + district_name, Position.Bottom
         )
 
+    elif text == Commands.my_alerts:
+        alerts = tele.get_saved_alerts_str
+        reply_text = alerts
+        reply_keyboard = [
+            [Commands.my_alerts],
+            [Commands.stop_alerts],
+            [Commands.main_menu],
+        ]
+
+    elif text == Commands.stop_alerts:
+        tele.unsubscribe()
+        reply_text = "You will not receive any alerts."
+    elif text == Commands.more_options:
+        reply_text = "Please select from below options"
+        reply_keyboard = [
+            [Commands.my_alerts],
+            [Commands.stop_alerts],
+            [Commands.main_menu],
+        ]
     elif text.startswith(notify_str_pretext):
         reply_text = "We will Notify You when the slots will be available."
 

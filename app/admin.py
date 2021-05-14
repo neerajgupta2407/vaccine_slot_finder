@@ -10,8 +10,8 @@ class TelegramAccountAdmin(admin.ModelAdmin):
         "chat_id",
         "recent_searches",
         "saved_alerts",
-        "alerts_18",
-        "alerts_45",
+        "total_alerts_18",
+        "total_alerts_45",
         "is_active",
         "create_time",
     ]
