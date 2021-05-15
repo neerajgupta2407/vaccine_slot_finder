@@ -8,3 +8,4 @@ ipython
 fabric==2.5.0
 django-environ
 model_bakery
+sentry-sdk
