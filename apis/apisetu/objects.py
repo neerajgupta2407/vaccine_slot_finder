@@ -24,6 +24,8 @@ class SessionObject:
     min_age_limit: int
     vaccine: str
     slots: List[str]
+    available_capacity_dose1: str
+    available_capacity_dose2: str
 
     @property
     def slots_str(self):
