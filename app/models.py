@@ -7,6 +7,8 @@ from apis.apisetu.apisetu import APISETU
 from app.utils import *
 from vaccine_slots.settings import telegram_bot
 
+from .config import *
+
 MAX_ALERTS = int(config("max_alerts"))
 SHOW_LAST_N_SEARCH = 3
 

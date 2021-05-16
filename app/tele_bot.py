@@ -23,7 +23,7 @@ from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import CallbackContext, Filters, MessageHandler, Updater
 
 from apis.apisetu.apisetu import APISETU
-from app.models import AgeType, Disrtict, States, TelegramAccount
+from app.models import *
 from vaccine_slots.settings import MIN_SLOTS
 
 from .utils import *
@@ -90,6 +90,7 @@ class Commands:
     my_alerts = "My Alerts"
     stop_alerts = "Stop Alerts"
     main_menu = "Home"
+    share = "Share"
     help = "help"
     start = "start"
 
@@ -230,9 +231,8 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         alerts = tele.get_saved_alerts_str
         reply_text = alerts
         reply_keyboard = [
-            [Commands.my_alerts],
-            [Commands.stop_alerts],
-            [Commands.main_menu],
+            [Commands.my_alerts, Commands.stop_alerts],
+            [Commands.share, Commands.main_menu],
         ]
 
     elif text == Commands.stop_alerts:
@@ -241,12 +241,14 @@ def command_handler(update: Update, context: CallbackContext) -> None:
     elif text == Commands.more_options:
         reply_text = "Please select from below options"
         reply_keyboard = [
-            [Commands.my_alerts],
-            [Commands.stop_alerts],
-            [Commands.main_menu],
+            [Commands.my_alerts, Commands.stop_alerts],
+            [Commands.share, Commands.main_menu],
         ]
     elif text.startswith(notify_str_pretext):
         reply_text = "We will Notify You when the slots will be available."
+
+    elif text == Commands.share:
+        reply_text = SHARE_TEXT
 
     else:
         try:
