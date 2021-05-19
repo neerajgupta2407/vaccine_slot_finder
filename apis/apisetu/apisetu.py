@@ -41,17 +41,17 @@ class APISETU:
             date=self._get_date_str(date), district_id=district_id
         )
         data = self.send_request(url)
-        resp = [CenterObject(**a) for a in data["centers"]]
+        resp = [CenterObject(**a) for a in data.get("centers", [])]
         return resp
 
     def get_states(self):
         url = LIST_STATES_URL
         data = self.send_request(url)
-        resp = [StateObject(**a) for a in data["states"]]
+        resp = [StateObject(**a) for a in data.get("states", [])]
         return resp
 
     def get_district(self, state_id):
         url = LIST_DISTRICT_URL.format(state_id=state_id)
         data = self.send_request(url)
-        resp = [DistrictObject(**a) for a in data["districts"]]
+        resp = [DistrictObject(**a) for a in data.get("districts", [])]
         return resp
