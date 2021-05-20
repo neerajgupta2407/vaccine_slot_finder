@@ -137,7 +137,7 @@ def append_back_button(reply_keyboard, text, position=Position.Top):
 
 def command_handler(update: Update, context: CallbackContext) -> None:
     state_pretext = "State:"
-    district_pretext = "Dis: "
+    district_pretext = "District:"
     slot_18_pretext = "18+ Slot in "
     slot_45_pretext = "45+ Slot in "
     notify_str_pretext = "Notify me on Slot Availability in "
@@ -182,21 +182,22 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         reply_keyboard = append_back_button(
             reply_keyboard, Commands.list_states, position=Position.Top
         )
-    # elif text.startswith(district_pretext):
-    #     tele.save_search_query(text)
-    #     district_name = text.replace(district_pretext, "")
-    #     district = Disrtict.objects.get(district_name=district_name)
-    #     reply_text = f"Please select below option"
-    #     reply_keyboard = [
-    #         [slot_18_pretext + district.district_name],
-    #         [slot_45_pretext + district.district_name],
-    #         # [back_pretext + state_pretext + district.state.state_name],
-    #     ]
-    #     reply_keyboard = append_back_button(
-    #         reply_keyboard, state_pretext + district.state.state_name, Position.Bottom
-    #     )
+    elif text.startswith(district_pretext):
+        # tele.save_search_query(text)
+        district_name = text.replace(district_pretext, "")
+        district = Disrtict.objects.get(district_name=district_name)
+        reply_text = f"Please select below option"
+        reply_keyboard = [
+            [slot_18_pretext + district.district_name],
+            [slot_45_pretext + district.district_name],
+            [back_pretext + state_pretext + district.state.state_name],
+        ]
+        reply_keyboard = append_back_button(
+            reply_keyboard, state_pretext + district.state.state_name, Position.Bottom
+        )
 
     elif text.startswith(slot_18_pretext):
+        tele.save_search_query(text)
         district_name = text.replace(slot_18_pretext, "")
         district = Disrtict.objects.get(district_name=district_name)
         data = api_obj.slot_by_district(district.pk)
@@ -213,6 +214,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
         )
 
     elif text.startswith(slot_45_pretext):
+        tele.save_search_query(text)
         district_name = text.replace(slot_45_pretext, "")
         district = Disrtict.objects.get(district_name=district_name)
         data = api_obj.slot_by_district(district.pk)
