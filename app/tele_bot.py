@@ -137,7 +137,7 @@ def append_back_button(reply_keyboard, text, position=Position.Top):
 
 def command_handler(update: Update, context: CallbackContext) -> None:
     state_pretext = "State:"
-    district_pretext = "District:"
+    district_pretext = "Dis: "
     slot_18_pretext = "18+ Slot in "
     slot_45_pretext = "45+ Slot in "
     notify_str_pretext = "Notify me on Slot Availability in "
@@ -174,24 +174,27 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             "district_name"
         )
         reply_text = f"Here is the list of District for State: {state_name}"
-        reply_keyboard = append_back_button(
-            [[district_pretext + a.district_name] for a in disticts],
-            Commands.list_states,
-            position=Position.Top,
-        )
-    elif text.startswith(district_pretext):
-        tele.save_search_query(text)
-        district_name = text.replace(district_pretext, "")
-        district = Disrtict.objects.get(district_name=district_name)
-        reply_text = f"Please select below option"
         reply_keyboard = [
-            [slot_18_pretext + district.district_name],
-            [slot_45_pretext + district.district_name],
-            # [back_pretext + state_pretext + district.state.state_name],
+            [slot_18_pretext + a.district_name, slot_45_pretext + a.district_name]
+            for a in disticts
         ]
+
         reply_keyboard = append_back_button(
-            reply_keyboard, state_pretext + district.state.state_name, Position.Bottom
+            reply_keyboard, Commands.list_states, position=Position.Top
         )
+    # elif text.startswith(district_pretext):
+    #     tele.save_search_query(text)
+    #     district_name = text.replace(district_pretext, "")
+    #     district = Disrtict.objects.get(district_name=district_name)
+    #     reply_text = f"Please select below option"
+    #     reply_keyboard = [
+    #         [slot_18_pretext + district.district_name],
+    #         [slot_45_pretext + district.district_name],
+    #         # [back_pretext + state_pretext + district.state.state_name],
+    #     ]
+    #     reply_keyboard = append_back_button(
+    #         reply_keyboard, state_pretext + district.state.state_name, Position.Bottom
+    #     )
 
     elif text.startswith(slot_18_pretext):
         district_name = text.replace(slot_18_pretext, "")
@@ -206,7 +209,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             tele.alert(AgeType._eighteen, district_id=district.pk)
             reply_text += f"\n<b>We will notify you when atleasst {MIN_SLOTS} slots will be available in {district_name}</b>"
         reply_keyboard = append_back_button(
-            [], district_pretext + district_name, Position.Bottom
+            [], state_pretext + district.state.state_name, Position.Bottom
         )
 
     elif text.startswith(slot_45_pretext):
@@ -224,7 +227,7 @@ def command_handler(update: Update, context: CallbackContext) -> None:
             reply_text += f"\nWe will notify you when atleasst {MIN_SLOTS} slots will be available in {district_name}</b>"
 
         reply_keyboard = append_back_button(
-            [], district_pretext + district_name, Position.Bottom
+            [], state_pretext + district.state.state_name, Position.Bottom
         )
 
     elif text == Commands.my_alerts:
