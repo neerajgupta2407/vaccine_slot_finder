@@ -29,8 +29,8 @@ class SessionObject:
     min_age_limit: int
     vaccine: str
     slots: List[str]
-    available_capacity_dose1: str
-    available_capacity_dose2: str
+    available_capacity_dose1: int
+    available_capacity_dose2: int
 
     def __post_init__(self):
         # Overriding the available_capacity_dose as available_capacity_dose1 as
@@ -55,7 +55,7 @@ class SessionObject:
 
     @property
     def display_info_str(self):
-        text = f"{self.date}:  {self.vaccine} -> Available Slots\nD1:{self.available_capacity_dose1} | D2: {self.available_capacity_dose2}\n"
+        text = f"{self.date}:  {self.vaccine} \n Available Slots -> D1:{self.available_capacity_dose1} | D2: {self.available_capacity_dose2}\n"
         return text
 
 
@@ -63,6 +63,10 @@ class SessionObject:
 class VaccineFees:
     vaccine: str
     fee: int
+
+    @property
+    def display_info_str(self):
+        return f"{self.vaccine}: {self.fee}"
 
 
 @dataclass(init=False)
@@ -91,6 +95,17 @@ class CenterObject:
             setattr(self, a, kwargs[a])
         self.sessions = [SessionObject(**b) for b in kwargs.get("sessions", [])]
         self.vaccine_fees = [VaccineFees(**b) for b in kwargs.get("vaccine_fees", [])]
+
+    @property
+    def is_paid(self):
+        return self.fee_type.lower() == FeeType.paid
+
+    @property
+    def vaccine_info_str(self):
+        text = ""
+        if self.is_paid and len(self.vaccine_fees) > 0:
+            text = ", ".join([a.display_info_str for a in self.vaccine_fees])
+        return text
 
     @property
     def available_18_sessions(self):
@@ -137,8 +152,8 @@ class CenterObject:
     @property
     def detail_available_18_info_str(self):
         text = f"Pin: {self.pincode}"
-        if self.fee_type.lower() == FeeType.paid:
-            text = text + "<strong>(PAID)</strong> "
+        if self.is_paid:
+            text = text + f"<strong>(PAID {self.vaccine_info_str})</strong> "
         text = text + f"{self.name} {self.address}\n"
         for a in self.available_18_sessions:
             text += a.display_info_str + "\n"
@@ -147,8 +162,8 @@ class CenterObject:
     @property
     def detail_available_45_info_str(self):
         text = f"Pin: {self.pincode} "
-        if self.fee_type.lower() == FeeType.paid:
-            text = text + "<strong>(PAID)</strong> "
+        if self.is_paid:
+            text = text + f"<strong>(PAID {self.vaccine_info_str})</strong> \n"
         text = text + f"{self.name} {self.address}\n"
         for a in self.available_45_sessions:
             text += a.display_info_str + "\n"
