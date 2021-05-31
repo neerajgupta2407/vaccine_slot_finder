@@ -4,6 +4,11 @@ from typing import List
 from vaccine_slots.settings import MIN_SLOTS
 
 
+class FeeType:
+    free = "free"
+    paid = "paid"
+
+
 @dataclass
 class StateObject:
     state_id: int
@@ -27,6 +32,11 @@ class SessionObject:
     available_capacity_dose1: str
     available_capacity_dose2: str
 
+    def __post_init__(self):
+        # Overriding the available_capacity_dose as available_capacity_dose1 as
+        # as we need to show centers for either dose1 or dose2.
+        self.available_capacity = self.available_capacity_dose1
+
     @property
     def slots_str(self):
         return ", ".join(self.slots)
@@ -45,8 +55,14 @@ class SessionObject:
 
     @property
     def display_info_str(self):
-        text = f"{self.date}:  {self.vaccine} -> Available Slots:{self.available_capacity}\n"
+        text = f"{self.date}:  {self.vaccine} -> Available Slots\nD1:{self.available_capacity_dose1} | D2: {self.available_capacity_dose2}\n"
         return text
+
+
+@dataclass()
+class VaccineFees:
+    vaccine: str
+    fee: int
 
 
 @dataclass(init=False)
@@ -57,13 +73,14 @@ class CenterObject:
     state_name: str
     district_name: str
     block_name: str
-    pincode: int
+    pincodefee_type: int
     lat: int
     long: int
     _from: str
     to: str
     fee_type: str
     sessions: List[SessionObject]
+    vaccine_fees: List[VaccineFees]
 
     def __init__(self, **kwargs):
         kwargs["_from"] = kwargs["from"]
@@ -72,7 +89,8 @@ class CenterObject:
 
         for a in kwargs:
             setattr(self, a, kwargs[a])
-        self.sessions = [SessionObject(**b) for b in kwargs["sessions"]]
+        self.sessions = [SessionObject(**b) for b in kwargs.get("sessions", [])]
+        self.vaccine_fees = [VaccineFees(**b) for b in kwargs.get("vaccine_fees", [])]
 
     @property
     def available_18_sessions(self):
@@ -118,14 +136,20 @@ class CenterObject:
 
     @property
     def detail_available_18_info_str(self):
-        text = f"{self.pincode} {self.name} {self.address}\n"
+        text = f"Pin: {self.pincode}"
+        if self.fee_type.lower() == FeeType.paid:
+            text = text + "<strong>(PAID)</strong> "
+        text = text + f"{self.name} {self.address}\n"
         for a in self.available_18_sessions:
             text += a.display_info_str + "\n"
         return text
 
     @property
     def detail_available_45_info_str(self):
-        text = f"{self.pincode} {self.name} {self.address}\n"
+        text = f"Pin: {self.pincode} "
+        if self.fee_type.lower() == FeeType.paid:
+            text = text + "<strong>(PAID)</strong> "
+        text = text + f"{self.name} {self.address}\n"
         for a in self.available_45_sessions:
             text += a.display_info_str + "\n"
         return text

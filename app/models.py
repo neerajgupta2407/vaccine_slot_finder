@@ -109,7 +109,6 @@ class TelegramAccount(models.Model):
         """
         obj, _ = cls.objects.get_or_create(chat_id=chat_id)
         obj.username = username[:28]
-        obj.meta_info = meta_info
         obj.save()
         return obj
 
