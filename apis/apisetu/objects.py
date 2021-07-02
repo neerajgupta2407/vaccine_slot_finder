@@ -31,6 +31,8 @@ class SessionObject:
     slots: List[str]
     available_capacity_dose1: int
     available_capacity_dose2: int
+    max_age_limit: int = None
+    allow_all_age: bool = False
 
     def __post_init__(self):
         # Overriding the available_capacity_dose as available_capacity_dose1 as
